@@ -1,6 +1,6 @@
 export type PacingStrategy = 'even' | 'negative' | 'positive' | 'progressive'
 export type DistanceUnit = 'km' | 'miles'
-export type ImageSize = 'auto' | 'wallpaper' | 'a4' | 'square'
+export type ImageSize = 'auto' | 'wallpaper' | 'letter' | 'square'
 
 export interface RaceConfig {
   /** Total race distance, always stored in kilometres internally */

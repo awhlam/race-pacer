@@ -72,7 +72,7 @@ export async function copyForGoogleSheets(
 
 const IMAGE_SIZES: Record<Exclude<ImageSize, 'auto'>, { width: number; height: number }> = {
   wallpaper: { width: 1080, height: 1920 },
-  a4: { width: 2480, height: 3508 },
+  letter: { width: 2550, height: 3300 },
   square: { width: 1080, height: 1080 },
 }
 
@@ -86,61 +86,57 @@ export async function exportAsImage(
   // Dynamically import html2canvas to keep initial bundle lean
   const html2canvas = (await import('html2canvas')).default
 
-  if (size === 'auto') {
-    const canvas = await html2canvas(element, {
-      backgroundColor: '#111827', // gray-900
+  // Blank out placeholder text so empty note fields don't appear in the export
+  const noteInputs = Array.from(element.querySelectorAll<HTMLInputElement>('.note-input'))
+  const savedPlaceholders = noteInputs.map((el) => el.placeholder)
+  noteInputs.forEach((el) => { el.placeholder = '' })
+
+  try {
+    if (size === 'auto') {
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#111827', // gray-900
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      })
+      triggerDownload(canvas, 'race-pace-plan.png')
+      return
+    }
+
+    const { width, height } = IMAGE_SIZES[size]
+
+    // Render the element at 2× device-pixel-ratio for sharpness
+    const sourceCanvas = await html2canvas(element, {
+      backgroundColor: '#111827',
       scale: 2,
       useCORS: true,
       logging: false,
     })
-    triggerDownload(canvas, 'race-pace-plan.png')
-    return
+
+    // Compose onto a canvas of the target pixel dimensions
+    const output = document.createElement('canvas')
+    output.width = width
+    output.height = height
+    const ctx = output.getContext('2d')!
+    ctx.fillStyle = '#111827'
+    ctx.fillRect(0, 0, width, height)
+
+    // Scale source to fit within the target, maintaining aspect ratio, centered
+    const scaleX = width / sourceCanvas.width
+    const scaleY = height / sourceCanvas.height
+    const scale = Math.min(scaleX, scaleY, 1) // never upscale past 1:1
+
+    const drawW = sourceCanvas.width * scale
+    const drawH = sourceCanvas.height * scale
+    const offsetX = (width - drawW) / 2
+    const offsetY = (height - drawH) / 2
+
+    ctx.drawImage(sourceCanvas, offsetX, offsetY, drawW, drawH)
+
+    triggerDownload(output, `race-pace-${size}.png`)
+  } finally {
+    noteInputs.forEach((el, i) => { el.placeholder = savedPlaceholders[i] })
   }
-
-  const { width, height } = IMAGE_SIZES[size]
-
-  // Render the element at 2× device-pixel-ratio for sharpness
-  const sourceCanvas = await html2canvas(element, {
-    backgroundColor: '#111827',
-    scale: 2,
-    useCORS: true,
-    logging: false,
-  })
-
-  // Compose onto a canvas of the target pixel dimensions
-  const output = document.createElement('canvas')
-  output.width = width
-  output.height = height
-  const ctx = output.getContext('2d')!
-  ctx.fillStyle = '#111827'
-  ctx.fillRect(0, 0, width, height)
-
-  // Scale source to fit within the target, maintaining aspect ratio, centered
-  const scaleX = width / sourceCanvas.width
-  const scaleY = height / sourceCanvas.height
-  const scale = Math.min(scaleX, scaleY, 1) // never upscale past 1:1 for auto
-
-  const drawW = sourceCanvas.width * scale
-  const drawH = sourceCanvas.height * scale
-  const offsetX = (width - drawW) / 2
-  const offsetY = size === 'wallpaper'
-    ? Math.max((height - drawH) / 2, 80) // push down slightly for wallpaper so top isn't cut by status bar
-    : (height - drawH) / 2
-
-  ctx.drawImage(sourceCanvas, offsetX, offsetY, drawW, drawH)
-
-  // For wallpaper: add a subtle header
-  if (size === 'wallpaper') {
-    ctx.font = 'bold 48px system-ui, sans-serif'
-    ctx.fillStyle = '#f97316' // orange-500
-    ctx.textAlign = 'center'
-    ctx.fillText('RACE PACER', width / 2, 56)
-    ctx.font = '32px system-ui, sans-serif'
-    ctx.fillStyle = '#9ca3af' // gray-400
-    ctx.fillText('swipe left to reference during race', width / 2, 96)
-  }
-
-  triggerDownload(output, `race-pace-${size}.png`)
 }
 
 function triggerDownload(canvas: HTMLCanvasElement, filename: string): void {

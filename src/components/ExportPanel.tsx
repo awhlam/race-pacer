@@ -11,7 +11,7 @@ interface Props {
 const IMAGE_SIZES: { value: ImageSize; label: string; desc: string }[] = [
   { value: 'auto', label: 'Auto', desc: 'Fits content' },
   { value: 'wallpaper', label: 'Phone Wallpaper', desc: '1080 × 1920' },
-  { value: 'a4', label: 'A4 Print', desc: '2480 × 3508' },
+  { value: 'letter', label: 'Letter Print', desc: '2550 × 3300' },
   { value: 'square', label: 'Square', desc: '1080 × 1080' },
 ]
 

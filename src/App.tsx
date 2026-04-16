@@ -9,8 +9,8 @@ import ExportPanel from './components/ExportPanel'
 
 const DEFAULT_CONFIG: RaceConfig = {
   distanceKm: PRESETS['Marathon'],
-  targetPaceSecsPerUnit: 5 * 60 + 42, // 5:42/km ≈ 4h marathon
-  unit: 'km',
+  targetPaceSecsPerUnit: 9 * 60 + 9, // 9:09/mile ≈ 4h marathon
+  unit: 'miles',
   strategy: 'even',
   spreadPercent: 5,
 }

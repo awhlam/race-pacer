@@ -27,6 +27,21 @@ export function parsePaceInput(input: string): number {
   return parseInt(match[1], 10) * 60 + parseInt(match[2], 10)
 }
 
+/** Parse a "H:MM" total-time string (hours:minutes) into seconds. Returns NaN on invalid input. */
+export function parseTimeInput(input: string): number {
+  const trimmed = input.trim()
+  const match = trimmed.match(/^(\d+):([0-5]\d)$/)
+  if (!match) return NaN
+  return parseInt(match[1], 10) * 3600 + parseInt(match[2], 10) * 60
+}
+
+/** Format total seconds as "H:MM" (hours:minutes, e.g. 13500 → "3:45") */
+export function formatHourMin(totalSecs: number): string {
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.round((totalSecs % 3600) / 60)
+  return `${h}:${String(m).padStart(2, '0')}`
+}
+
 /**
  * Calculate the total distance of the race in the chosen display unit.
  */
