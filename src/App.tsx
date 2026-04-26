@@ -11,8 +11,9 @@ const DEFAULT_CONFIG: RaceConfig = {
   distanceKm: PRESETS['Marathon'],
   targetPaceSecsPerUnit: 9 * 60 + 9, // 9:09/mile ≈ 4h marathon
   unit: 'miles',
-  strategy: 'even',
-  spreadPercent: 5,
+  strategy: 'negative',
+  spreadPercent: 3,
+  warmup: true,
 }
 
 const TABLE_ID = 'pace-table'

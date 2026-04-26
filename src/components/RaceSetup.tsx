@@ -9,11 +9,14 @@ interface Props {
 }
 
 const STRATEGIES: { value: PacingStrategy; label: string; description: string }[] = [
-  { value: 'even', label: 'Even Split', description: 'Same pace throughout' },
-  { value: 'negative', label: 'Negative Split', description: '2nd half faster' },
-  { value: 'positive', label: 'Positive Split', description: '1st half faster' },
-  { value: 'progressive', label: 'Progressive', description: 'Steadily accelerate' },
+  { value: 'even', label: 'Even Split', description: 'Steady pace — best for 5K' },
+  { value: 'negative', label: 'Negative Split', description: 'Gradually speed up — ideal for half/full marathon' },
+  { value: 'positive', label: 'Positive Split', description: 'Gradually slow down — honest effort' },
 ]
+
+function suggestedStrategyForPreset(name: string): PacingStrategy {
+  return name === '5K' ? 'even' : 'negative'
+}
 
 export default function RaceSetup({ config, onChange }: Props) {
   const [activePreset, setActivePreset] = useState<string>('Marathon')
@@ -36,17 +39,18 @@ export default function RaceSetup({ config, onChange }: Props) {
   function handlePreset(name: string, km: number) {
     setActivePreset(name)
     setCustomDistance('')
+    const strategy = suggestedStrategyForPreset(name)
     if (lastEdited === 'time' && targetTimeSecs > 0) {
       const dist = distInUnits(km, config.unit)
       const newPace = targetTimeSecs / dist
       setPaceInput(formatPace(newPace))
-      update({ distanceKm: km, targetPaceSecsPerUnit: newPace })
+      update({ distanceKm: km, targetPaceSecsPerUnit: newPace, strategy })
     } else {
       const dist = distInUnits(km, config.unit)
       const newTimeSecs = Math.round(config.targetPaceSecsPerUnit * dist)
       setTargetTimeSecs(newTimeSecs)
       setTimeInput(formatHourMin(newTimeSecs))
-      update({ distanceKm: km })
+      update({ distanceKm: km, strategy })
     }
   }
 
@@ -289,17 +293,33 @@ export default function RaceSetup({ config, onChange }: Props) {
           <input
             type="range"
             min={1}
-            max={30}
+            max={8}
             value={config.spreadPercent}
             onChange={(e) => update({ spreadPercent: Number(e.target.value) })}
             className="w-full accent-orange-500"
           />
           <div className="flex justify-between text-xs text-gray-600 mt-1">
             <span>1% (subtle)</span>
-            <span>30% (aggressive)</span>
+            <span>8% (aggressive)</span>
           </div>
         </div>
       )}
+
+      {/* Warmup toggle */}
+      <label className="flex items-start gap-2 text-sm text-gray-300 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={config.warmup}
+          onChange={(e) => update({ warmup: e.target.checked })}
+          className="mt-0.5 accent-orange-500"
+        />
+        <span>
+          Ease into the first mile
+          <span className="block text-xs text-gray-500">
+            Slow the first 1–2 segments slightly to settle into pace
+          </span>
+        </span>
+      </label>
     </div>
   )
 }
