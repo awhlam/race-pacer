@@ -1,4 +1,4 @@
-export type PacingStrategy = 'even' | 'negative' | 'positive' | 'progressive'
+export type PacingStrategy = 'even' | 'negative' | 'positive'
 export type DistanceUnit = 'km' | 'miles'
 export type ImageSize = 'auto' | 'wallpaper' | 'letter' | 'square'
 
@@ -9,8 +9,10 @@ export interface RaceConfig {
   targetPaceSecsPerUnit: number
   unit: DistanceUnit
   strategy: PacingStrategy
-  /** 0–30: how much variance to apply across segments, as a percentage */
+  /** 0–8: how much variance to apply across segments, as a percentage */
   spreadPercent: number
+  /** Slow the first 1–2 segments slightly so the runner eases into target pace */
+  warmup: boolean
 }
 
 export interface PaceSegment {

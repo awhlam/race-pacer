@@ -57,10 +57,12 @@ function raceDistanceInUnit(config: RaceConfig): number {
  *
  * P = target pace, S = spreadPercent/100, N = full segment count
  *
- * even:        pace[i] = P
- * negative:    first half  = P*(1+S/2), second half = P*(1-S/2)
- * positive:    first half  = P*(1-S/2), second half = P*(1+S/2)
- * progressive: pace[i] = P*(1+S/2) - P*S*(i/(N-1))   (linear, start slow → end fast)
+ * even:     pace[i] = P
+ * negative: pace[i] = P*(1+S/2) - P*S*(i/(N-1))   (linear, start slow → end fast)
+ * positive: pace[i] = P*(1-S/2) + P*S*(i/(N-1))   (linear, start fast → end slow)
+ *
+ * Both negative and positive use a linear ramp rather than a midpoint step
+ * function — real fatigue/effort changes are gradual, not binary at halfway.
  */
 function segmentPace(
   index: number,
@@ -75,15 +77,14 @@ function segmentPace(
     case 'even':
       return P
 
-    case 'negative':
-      return index < N / 2 ? P * (1 + S / 2) : P * (1 - S / 2)
-
-    case 'positive':
-      return index < N / 2 ? P * (1 - S / 2) : P * (1 + S / 2)
-
-    case 'progressive': {
+    case 'negative': {
       if (N <= 1) return P
       return P * (1 + S / 2) - P * S * (index / (N - 1))
+    }
+
+    case 'positive': {
+      if (N <= 1) return P
+      return P * (1 - S / 2) + P * S * (index / (N - 1))
     }
   }
 }
@@ -104,6 +105,10 @@ export function generateSegments(
   // Total number of rows (may include a partial final row)
   const totalRows = remainder > 0.001 ? fullSegments + 1 : fullSegments
 
+  // Warmup bumps are mean-zero across the full segments so goal time stays
+  // preserved. Skip for very short races where a warmup is meaningless.
+  const warmupBumps = warmupBumpArray(config, fullSegments, totalDistance)
+
   const segments: PaceSegment[] = []
   let cumulative = 0
 
@@ -111,9 +116,18 @@ export function generateSegments(
     const isPartial = i === fullSegments && remainder > 0.001
     const segmentDistance = isPartial ? remainder : 1.0
 
-    // For strategy calculation we always use the full-segment count as the
-    // denominator so partial final segments don't skew the interpolation.
-    const pace = segmentPace(i, Math.max(fullSegments, 1), config)
+    // The partial final segment is paced at the target pace P. Since every
+    // strategy is mean-preserving across full segments (and warmup bumps are
+    // mean-zero, applied additively as a fraction of P), this guarantees the
+    // cumulative finish time exactly matches the goal time regardless of
+    // strategy or spread.
+    let pace: number
+    if (isPartial) {
+      pace = config.targetPaceSecsPerUnit
+    } else {
+      pace = segmentPace(i, Math.max(fullSegments, 1), config)
+      if (warmupBumps) pace += warmupBumps[i] * config.targetPaceSecsPerUnit
+    }
     const segmentTime = pace * segmentDistance
     cumulative += segmentTime
 
@@ -128,6 +142,32 @@ export function generateSegments(
   }
 
   return segments
+}
+
+/**
+ * Build a mean-zero perturbation array that slows the first 1–2 segments
+ * and slightly speeds up the rest, so the runner eases into target pace
+ * without changing the overall goal time.
+ *
+ * Returns null when warmup is disabled or the race is too short for a
+ * meaningful warmup (parkrun-length races are run hard from the gun).
+ */
+function warmupBumpArray(
+  config: RaceConfig,
+  fullSegments: number,
+  totalDistance: number,
+): number[] | null {
+  if (!config.warmup) return null
+  if (fullSegments < 3 || totalDistance < 5) return null
+
+  const bumps = new Array(fullSegments).fill(0)
+  bumps[0] = 0.03
+  bumps[1] = 0.01
+  const offset = -(0.03 + 0.01) / (fullSegments - 2)
+  for (let i = 2; i < fullSegments; i++) {
+    bumps[i] = offset
+  }
+  return bumps
 }
 
 /** Compute the average pace across all segments (weighted by distance). */
