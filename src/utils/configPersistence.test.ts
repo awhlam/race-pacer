@@ -13,7 +13,6 @@ const SAMPLE: RaceConfig = {
   unit: 'miles',
   strategy: 'negative',
   spreadPercent: 3,
-  warmup: true,
 }
 
 describe('encodeConfig / decodeConfig', () => {
@@ -47,52 +46,54 @@ describe('encodeConfig / decodeConfig', () => {
     }
   })
 
-  it('handles warmup=false', () => {
-    const encoded = encodeConfig({ ...SAMPLE, warmup: false })
-    expect(decodeConfig(encoded)?.warmup).toBe(false)
-  })
-
   it('returns null for empty input', () => {
     expect(decodeConfig('')).toBeNull()
     expect(decodeConfig('#')).toBeNull()
   })
 
   it('returns null when version is missing', () => {
-    expect(decodeConfig('d=42&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('d=42&p=300&u=km&s=even&sp=0')).toBeNull()
   })
 
   it('returns null when version does not match', () => {
-    expect(decodeConfig('v=99&d=42&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('v=99&d=42&p=300&u=km&s=even&sp=0')).toBeNull()
   })
 
   it('returns null when distance is invalid', () => {
-    expect(decodeConfig('v=1&d=foo&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=0&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=-5&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=2000&p=300&u=km&s=even&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('v=1&d=foo&p=300&u=km&s=even&sp=0')).toBeNull()
+    expect(decodeConfig('v=1&d=0&p=300&u=km&s=even&sp=0')).toBeNull()
+    expect(decodeConfig('v=1&d=-5&p=300&u=km&s=even&sp=0')).toBeNull()
+    expect(decodeConfig('v=1&d=2000&p=300&u=km&s=even&sp=0')).toBeNull()
   })
 
   it('returns null when pace is invalid', () => {
-    expect(decodeConfig('v=1&d=42&p=foo&u=km&s=even&sp=0&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=42&p=0&u=km&s=even&sp=0&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=42&p=99999&u=km&s=even&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=foo&u=km&s=even&sp=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=0&u=km&s=even&sp=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=99999&u=km&s=even&sp=0')).toBeNull()
   })
 
   it('returns null when unit is unrecognised', () => {
-    expect(decodeConfig('v=1&d=42&p=300&u=furlongs&s=even&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=300&u=furlongs&s=even&sp=0')).toBeNull()
   })
 
   it('returns null when strategy is unrecognised', () => {
-    expect(decodeConfig('v=1&d=42&p=300&u=km&s=insane&sp=0&w=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=300&u=km&s=insane&sp=0')).toBeNull()
   })
 
   it('returns null when spread is out of range', () => {
-    expect(decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=-1&w=0')).toBeNull()
-    expect(decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=99&w=0')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=-1')).toBeNull()
+    expect(decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=99')).toBeNull()
   })
 
-  it('returns null when warmup is not a boolean flag', () => {
-    expect(decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=0&w=maybe')).toBeNull()
+  it('ignores unknown params (e.g. legacy `w` from pre-removal links)', () => {
+    const decoded = decodeConfig('v=1&d=42&p=300&u=km&s=even&sp=0&w=1')
+    expect(decoded).toEqual({
+      distanceKm: 42,
+      targetPaceSecsPerUnit: 300,
+      unit: 'km',
+      strategy: 'even',
+      spreadPercent: 0,
+    })
   })
 })
 

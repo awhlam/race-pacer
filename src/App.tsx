@@ -19,7 +19,6 @@ const DEFAULT_CONFIG: RaceConfig = {
   unit: 'miles',
   strategy: 'negative',
   spreadPercent: 3,
-  warmup: true,
 }
 
 const TABLE_ID = 'pace-table'

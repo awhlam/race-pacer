@@ -105,49 +105,51 @@ export default function PaceChart({ segments, unit }: Props) {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        <BarChart
-          data={data}
-          margin={{ top: 8, right: 8, left: 8, bottom: 4 }}
-          barCategoryGap="20%"
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-          <XAxis
-            dataKey="name"
-            tick={{ fill: '#6b7280', fontSize: 10 }}
-            tickLine={false}
-            axisLine={{ stroke: '#374151' }}
-            interval={segments.length > 20 ? Math.floor(segments.length / 10) : 0}
-          />
-          <YAxis
-            domain={[yMin, yMax]}
-            tick={PaceTick}
-            tickLine={false}
-            axisLine={false}
-            width={46}
-            tickCount={6}
-          />
-          <Tooltip content={<PaceTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-          <ReferenceLine
-            y={avg}
-            stroke="#9ca3af"
-            strokeDasharray="4 4"
-            strokeWidth={1.5}
-            label={{
-              value: `avg ${formatPace(avg)}`,
-              fill: '#9ca3af',
-              fontSize: 10,
-              position: 'insideTopRight',
-            }}
-          />
-          <Bar dataKey="pace" radius={[3, 3, 0, 0]}>
-            {data.map((_, i) => {
-              const normalised = (paces[i] - minPace) / paceRange
-              return <Cell key={i} fill={barColor(normalised)} />
-            })}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="flex-1 min-h-[240px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 8, right: 8, left: 8, bottom: 4 }}
+            barCategoryGap="20%"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fill: '#6b7280', fontSize: 10 }}
+              tickLine={false}
+              axisLine={{ stroke: '#374151' }}
+              interval={segments.length > 20 ? Math.floor(segments.length / 10) : 0}
+            />
+            <YAxis
+              domain={[yMin, yMax]}
+              tick={PaceTick}
+              tickLine={false}
+              axisLine={false}
+              width={46}
+              tickCount={6}
+            />
+            <Tooltip content={<PaceTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+            <ReferenceLine
+              y={avg}
+              stroke="#9ca3af"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: `avg ${formatPace(avg)}`,
+                fill: '#9ca3af',
+                fontSize: 10,
+                position: 'insideTopRight',
+              }}
+            />
+            <Bar dataKey="pace" radius={[3, 3, 0, 0]}>
+              {data.map((_, i) => {
+                const normalised = (paces[i] - minPace) / paceRange
+                return <Cell key={i} fill={barColor(normalised)} />
+              })}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
       <p className="text-xs text-gray-600 text-center">
         Y-axis: pace per {unitLabel} (lower bar = faster)

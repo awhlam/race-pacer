@@ -305,21 +305,6 @@ export default function RaceSetup({ config, onChange }: Props) {
         </div>
       )}
 
-      {/* Warmup toggle */}
-      <label className="flex items-start gap-2 text-sm text-gray-300 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={config.warmup}
-          onChange={(e) => update({ warmup: e.target.checked })}
-          className="mt-0.5 accent-orange-500"
-        />
-        <span>
-          Ease into the first mile
-          <span className="block text-xs text-gray-500">
-            Slow the first 1–2 segments slightly to settle into pace
-          </span>
-        </span>
-      </label>
     </div>
   )
 }
