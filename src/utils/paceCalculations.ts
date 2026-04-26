@@ -3,16 +3,19 @@ import { KM_PER_MILE } from '../types'
 
 /** Format seconds as "M:SS" (e.g. 285 → "4:45") */
 export function formatPace(secs: number): string {
-  const m = Math.floor(secs / 60)
-  const s = Math.round(secs % 60)
+  // Round first so a value like 299.6 doesn't yield "4:60"
+  const total = Math.round(secs)
+  const m = Math.floor(total / 60)
+  const s = total % 60
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
 /** Format total seconds as "H:MM:SS" or "MM:SS" */
 export function formatTime(totalSecs: number): string {
-  const h = Math.floor(totalSecs / 3600)
-  const m = Math.floor((totalSecs % 3600) / 60)
-  const s = Math.round(totalSecs % 60)
+  const total = Math.round(totalSecs)
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
   if (h > 0) {
     return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
@@ -37,8 +40,10 @@ export function parseTimeInput(input: string): number {
 
 /** Format total seconds as "H:MM" (hours:minutes, e.g. 13500 → "3:45") */
 export function formatHourMin(totalSecs: number): string {
-  const h = Math.floor(totalSecs / 3600)
-  const m = Math.round((totalSecs % 3600) / 60)
+  // Round to whole minutes first so we never produce "0:60"
+  const totalMin = Math.round(totalSecs / 60)
+  const h = Math.floor(totalMin / 60)
+  const m = totalMin % 60
   return `${h}:${String(m).padStart(2, '0')}`
 }
 
@@ -116,18 +121,14 @@ export function generateSegments(
     const isPartial = i === fullSegments && remainder > 0.001
     const segmentDistance = isPartial ? remainder : 1.0
 
-    // The partial final segment is paced at the target pace P. Since every
-    // strategy is mean-preserving across full segments (and warmup bumps are
-    // mean-zero, applied additively as a fraction of P), this guarantees the
-    // cumulative finish time exactly matches the goal time regardless of
-    // strategy or spread.
-    let pace: number
-    if (isPartial) {
-      pace = config.targetPaceSecsPerUnit
-    } else {
-      pace = segmentPace(i, Math.max(fullSegments, 1), config)
-      if (warmupBumps) pace += warmupBumps[i] * config.targetPaceSecsPerUnit
-    }
+    // The partial final segment inherits the last full segment's pace so the
+    // chart smoothly continues the closing pace through the finish line. This
+    // introduces a tiny goal-time error proportional to remainder × P × S/2 —
+    // sub-second at typical 1–3% spread, ~4s at the 8% max on a marathon —
+    // which is well below what's perceptible mid-race.
+    const strategyIdx = isPartial ? Math.max(fullSegments - 1, 0) : i
+    let pace = segmentPace(strategyIdx, Math.max(fullSegments, 1), config)
+    if (warmupBumps) pace += warmupBumps[strategyIdx] * config.targetPaceSecsPerUnit
     const segmentTime = pace * segmentDistance
     cumulative += segmentTime
 
