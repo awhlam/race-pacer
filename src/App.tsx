@@ -1,7 +1,13 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { RaceConfig } from './types'
 import { PRESETS } from './types'
 import { generateSegments } from './utils/paceCalculations'
+import {
+  decodeConfig,
+  encodeConfig,
+  loadFromStorage,
+  saveToStorage,
+} from './utils/configPersistence'
 import RaceSetup from './components/RaceSetup'
 import PaceTable from './components/PaceTable'
 import PaceChart from './components/PaceChart'
@@ -18,9 +24,24 @@ const DEFAULT_CONFIG: RaceConfig = {
 
 const TABLE_ID = 'pace-table'
 
+function initialConfig(): RaceConfig {
+  if (typeof window === 'undefined') return DEFAULT_CONFIG
+  return (
+    decodeConfig(window.location.hash) ??
+    loadFromStorage() ??
+    DEFAULT_CONFIG
+  )
+}
+
 export default function App() {
-  const [config, setConfig] = useState<RaceConfig>(DEFAULT_CONFIG)
+  const [config, setConfig] = useState<RaceConfig>(initialConfig)
   const [notes, setNotes] = useState<string[]>([])
+
+  useEffect(() => {
+    const encoded = encodeConfig(config)
+    window.history.replaceState(null, '', `#${encoded}`)
+    saveToStorage(config)
+  }, [config])
 
   const segments = generateSegments(config, notes)
 
@@ -90,7 +111,7 @@ export default function App() {
 
         {/* Footer */}
         <footer className="text-center text-xs text-gray-700 pb-4">
-          Race Pacer · All calculations run in your browser · No data is stored or sent anywhere
+          Race Pacer · All calculations run in your browser · Your plan is saved locally and never sent anywhere
         </footer>
       </main>
     </div>

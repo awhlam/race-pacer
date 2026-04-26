@@ -17,6 +17,7 @@ const IMAGE_SIZES: { value: ImageSize; label: string; desc: string }[] = [
 
 export default function ExportPanel({ segments, config, tableElementId }: Props) {
   const [copiedSheets, setCopiedSheets] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
   const [imageSize, setImageSize] = useState<ImageSize>('wallpaper')
   const [exportingImage, setExportingImage] = useState(false)
 
@@ -27,6 +28,16 @@ export default function ExportPanel({ segments, config, tableElementId }: Props)
       await copyForGoogleSheets(segments, config)
       setCopiedSheets(true)
       setTimeout(() => setCopiedSheets(false), 2000)
+    } catch {
+      alert('Could not access clipboard. Please check browser permissions.')
+    }
+  }
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2000)
     } catch {
       alert('Could not access clipboard. Please check browser permissions.')
     }
@@ -62,6 +73,20 @@ export default function ExportPanel({ segments, config, tableElementId }: Props)
         >
           <DownloadIcon />
           Download CSV
+        </button>
+
+        {/* Share link */}
+        <button
+          onClick={handleCopyLink}
+          className={`${btnBase} ${
+            copiedLink
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+          }`}
+          title="Copy a shareable link to this exact plan"
+        >
+          {copiedLink ? <CheckIcon /> : <LinkIcon />}
+          {copiedLink ? 'Link copied!' : 'Copy share link'}
         </button>
 
         {/* Google Sheets */}
@@ -142,6 +167,14 @@ function CheckIcon() {
   return (
     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
     </svg>
   )
 }
