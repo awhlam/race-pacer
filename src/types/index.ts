@@ -11,8 +11,6 @@ export interface RaceConfig {
   strategy: PacingStrategy
   /** 0–8: how much variance to apply across segments, as a percentage */
   spreadPercent: number
-  /** Slow the first 1–2 segments slightly so the runner eases into target pace */
-  warmup: boolean
 }
 
 export interface PaceSegment {

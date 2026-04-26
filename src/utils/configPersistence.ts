@@ -11,7 +11,6 @@ export function encodeConfig(config: RaceConfig): string {
     u: config.unit,
     s: config.strategy,
     sp: String(config.spreadPercent),
-    w: config.warmup ? '1' : '0',
   })
   return params.toString()
 }
@@ -27,14 +26,12 @@ export function decodeConfig(encoded: string): RaceConfig | null {
   const u = params.get('u')
   const s = params.get('s')
   const sp = parseFloat(params.get('sp') ?? '')
-  const w = params.get('w')
 
   if (!isFinite(d) || d <= 0 || d > 1000) return null
   if (!isFinite(p) || p <= 0 || p > 7200) return null
   if (u !== 'km' && u !== 'miles') return null
   if (s !== 'even' && s !== 'negative' && s !== 'positive') return null
   if (!isFinite(sp) || sp < 0 || sp > 8) return null
-  if (w !== '0' && w !== '1') return null
 
   return {
     distanceKm: d,
@@ -42,7 +39,6 @@ export function decodeConfig(encoded: string): RaceConfig | null {
     unit: u as DistanceUnit,
     strategy: s as PacingStrategy,
     spreadPercent: sp,
-    warmup: w === '1',
   }
 }
 

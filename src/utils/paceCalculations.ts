@@ -110,10 +110,6 @@ export function generateSegments(
   // Total number of rows (may include a partial final row)
   const totalRows = remainder > 0.001 ? fullSegments + 1 : fullSegments
 
-  // Warmup bumps are mean-zero across the full segments so goal time stays
-  // preserved. Skip for very short races where a warmup is meaningless.
-  const warmupBumps = warmupBumpArray(config, fullSegments, totalDistance)
-
   const segments: PaceSegment[] = []
   let cumulative = 0
 
@@ -127,8 +123,7 @@ export function generateSegments(
     // sub-second at typical 1–3% spread, ~4s at the 8% max on a marathon —
     // which is well below what's perceptible mid-race.
     const strategyIdx = isPartial ? Math.max(fullSegments - 1, 0) : i
-    let pace = segmentPace(strategyIdx, Math.max(fullSegments, 1), config)
-    if (warmupBumps) pace += warmupBumps[strategyIdx] * config.targetPaceSecsPerUnit
+    const pace = segmentPace(strategyIdx, Math.max(fullSegments, 1), config)
     const segmentTime = pace * segmentDistance
     cumulative += segmentTime
 
@@ -143,32 +138,6 @@ export function generateSegments(
   }
 
   return segments
-}
-
-/**
- * Build a mean-zero perturbation array that slows the first 1–2 segments
- * and slightly speeds up the rest, so the runner eases into target pace
- * without changing the overall goal time.
- *
- * Returns null when warmup is disabled or the race is too short for a
- * meaningful warmup (parkrun-length races are run hard from the gun).
- */
-function warmupBumpArray(
-  config: RaceConfig,
-  fullSegments: number,
-  totalDistance: number,
-): number[] | null {
-  if (!config.warmup) return null
-  if (fullSegments < 3 || totalDistance < 5) return null
-
-  const bumps = new Array(fullSegments).fill(0)
-  bumps[0] = 0.03
-  bumps[1] = 0.01
-  const offset = -(0.03 + 0.01) / (fullSegments - 2)
-  for (let i = 2; i < fullSegments; i++) {
-    bumps[i] = offset
-  }
-  return bumps
 }
 
 /** Compute the average pace across all segments (weighted by distance). */

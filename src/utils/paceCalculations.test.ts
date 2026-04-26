@@ -20,7 +20,6 @@ function cfg(overrides: Partial<RaceConfig> = {}): RaceConfig {
     unit: 'km',
     strategy: 'even',
     spreadPercent: 0,
-    warmup: false,
     ...overrides,
   }
 }
@@ -127,18 +126,16 @@ describe('generateSegments — goal-time invariant', () => {
     for (const unit of ['km', 'miles'] as const) {
       for (const strategy of STRATEGIES) {
         for (const spreadPercent of [0, 3, 8]) {
-          for (const warmup of [false, true]) {
-            it(`${distanceKm}km in ${unit}, ${strategy}, spread=${spreadPercent}, warmup=${warmup}`, () => {
-              const segs = generateSegments(
-                cfg({ distanceKm, unit, strategy, spreadPercent, warmup }),
-                [],
-              )
-              const total = segs[segs.length - 1].cumulativeTimeSecs
-              const expectedDist = unit === 'km' ? distanceKm : distanceKm / 1.60934
-              const expected = 300 * expectedDist
-              expect(Math.abs(total - expected)).toBeLessThan(TOLERANCE_S)
-            })
-          }
+          it(`${distanceKm}km in ${unit}, ${strategy}, spread=${spreadPercent}`, () => {
+            const segs = generateSegments(
+              cfg({ distanceKm, unit, strategy, spreadPercent }),
+              [],
+            )
+            const total = segs[segs.length - 1].cumulativeTimeSecs
+            const expectedDist = unit === 'km' ? distanceKm : distanceKm / 1.60934
+            const expected = 300 * expectedDist
+            expect(Math.abs(total - expected)).toBeLessThan(TOLERANCE_S)
+          })
         }
       }
     }
@@ -201,36 +198,6 @@ describe('generateSegments — partial segment inheritance', () => {
     const lastFull = segs[25].paceSecsPerUnit
     const partial = segs[26].paceSecsPerUnit
     expect(partial).toBe(lastFull)
-  })
-})
-
-describe('generateSegments — warmup', () => {
-  it('first segment is slower than strategy pace when warmup is on', () => {
-    const withWarmup = generateSegments(
-      cfg({ distanceKm: 10, unit: 'km', strategy: 'even', warmup: true }),
-      [],
-    )
-    expect(withWarmup[0].paceSecsPerUnit).toBeGreaterThan(300)
-    expect(withWarmup[1].paceSecsPerUnit).toBeGreaterThan(300)
-  })
-
-  it('warmup is skipped for parkrun-length races', () => {
-    const segs = generateSegments(
-      cfg({ distanceKm: 3, unit: 'km', strategy: 'even', warmup: true }),
-      [],
-    )
-    for (const s of segs) {
-      expect(s.paceSecsPerUnit).toBe(300)
-    }
-  })
-
-  it('warmup preserves goal time exactly for an even strategy', () => {
-    const segs = generateSegments(
-      cfg({ distanceKm: 10, unit: 'km', strategy: 'even', warmup: true }),
-      [],
-    )
-    const total = segs[segs.length - 1].cumulativeTimeSecs
-    expect(total).toBeCloseTo(3000, 6)
   })
 })
 
